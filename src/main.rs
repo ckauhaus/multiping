@@ -7,6 +7,7 @@ extern crate tokio_core;
 extern crate tokio_ping;
 
 mod engine;
+mod output;
 mod status;
 #[cfg(test)]
 mod tests;
@@ -27,7 +28,6 @@ mod errors {
 use error_chain::ChainedError;
 use status::Status;
 use engine::{ping_all, Times};
-use std::borrow::Cow;
 use std::fmt::Write;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::process;
@@ -47,47 +47,40 @@ fn is_any(_: &IpAddr) -> bool {
 struct Targets<'a> {
     host: Vec<&'a str>,
     addr: Vec<IpAddr>,
+    warn: Vec<String>,
 }
 
 impl<'a> Targets<'a> {
+    /// Resolves single host name and adds results to addr, host, warn
+    fn add_host(&mut self, host: &'a str, filt: fn(&IpAddr) -> bool) {
+        match (host, 0).to_socket_addrs() {
+            Ok(addrs) => for addr in addrs.map(|sa| sa.ip()).filter(filt) {
+                self.addr.push(addr);
+                self.host.push(host);
+            },
+            Err(e) => self.warn.push(format!("{}: {}", host, e)),
+        }
+    }
+
     /// Resolves and filters by AF
     fn build<I>(hosts: I, filt: fn(&IpAddr) -> bool) -> Result<Self>
     where
         I: IntoIterator<Item = &'a str>,
     {
         let mut t = Self::default();
-        for h in hosts {
-            for a in (h, 0)
-                .to_socket_addrs()
-                .chain_err(|| format!("cannot resolve '{}'", h))?
-                .map(|sa| sa.ip())
-                .filter(filt)
-            {
-                t.addr.push(a);
-                t.host.push(h);
-            }
+        for host in hosts {
+            t.add_host(host, filt);
         }
         Ok(t)
     }
 
+    /// Actually invokes the ping machinery and feeds results to the next stage.
     fn ping(self, cutoff: f64) -> Result<PingTimes<'a>> {
         let times = ping_all(self.addr.iter(), cutoff)?;
         Ok(PingTimes {
             targets: self,
             times,
         })
-    }
-}
-
-/// Formats option float value as String
-///
-/// The Nagios Plugin Developer Guidelines require that nonexistent values are displayed as single
-/// letter "U".
-fn fmt_u(val: &Option<f64>) -> Cow<'static, str> {
-    if let Some(num) = *val {
-        Cow::from(num.to_string())
-    } else {
-        Cow::from("U")
     }
 }
 
@@ -117,7 +110,7 @@ impl<'a> PingTimes<'a> {
                 &mut res,
                 " '{}'={:.6}s;{};{};0",
                 self.targets.addr[i],
-                fmt_u(val),
+                output::u(val),
                 warn,
                 crit
             ).ok();
@@ -127,30 +120,28 @@ impl<'a> PingTimes<'a> {
 
     /// Generates Nagios-compatible output and status code
     fn evaluate(self, warn: f64, crit: f64) -> (String, Status) {
-        if self.times.is_empty() {
+        let (mut output, status) = if self.times.is_empty() {
             ("no targets found".into(), Status::Unknown)
         } else if let Some((best_time, best_host, best_addr)) = self.min_rtt() {
-            let status = Status::check(best_time, warn, crit);
-            let best = if best_host == best_addr.to_string() {
-                best_addr.to_string()
-            } else {
-                format!("{}/{}", best_host, best_addr)
-            };
             (
                 format!(
                     "best rtt {:.0} ms (for {}) |{}",
                     best_time * 1e3,
-                    best,
+                    output::best(best_host, best_addr.to_string()),
                     self.perfdata(warn, crit)
                 ),
-                status,
+                Status::check(best_time, warn, crit),
             )
         } else {
             (
                 format!("no data |{}", self.perfdata(warn, crit)),
                 Status::Critical,
             )
+        };
+        for warning in self.targets.warn {
+            write!(output, "\nwarning: {}", warning).is_ok();
         }
+        (output, status)
     }
 }
 

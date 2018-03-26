@@ -54,7 +54,16 @@ fn build_targets_ipv6() {
 
 #[test]
 fn build_targets_resolve_error() {
-    assert!(Targets::build(vec!["no.such.host.example.com"], is_any).is_err());
+    let t = Targets::build(vec!["no.host.90be20a2.example.com"], is_any).unwrap();
+    assert_eq!(t.addr.len(), 0);
+    assert_eq!(t.warn.len(), 1);
+}
+
+#[test]
+fn build_targets_partial_resolve_error() {
+    let t = Targets::build(vec!["no.host.90be20a2.example.com", "localhost"], is_any).unwrap();
+    assert!(t.addr.len() >= 1);
+    assert_eq!(t.warn.len(), 1);
 }
 
 #[test]
