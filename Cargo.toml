@@ -1,0 +1,23 @@
+[package]
+name = "multiping"
+version = "1.0.1"
+authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
+description = """\
+Pings several hosts at once to test outside connectivity.
+
+All hosts given on the command line are pinged in parallel. If at least one
+hosts' RTT lies within the given range, success is returned.
+
+This program can be used as Nagios-compatible plugin.
+"""
+
+[dependencies]
+clap = "2.20"
+error-chain = "0.11"
+futures = "0.1"
+tokio-core = "0.1"
+tokio-io = "0.1"
+tokio-ping = "0.1.2"
+
+[profile.release]
+lto = true
