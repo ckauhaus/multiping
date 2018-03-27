@@ -30,7 +30,7 @@ fn build_targets_ip6_literal() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(not(feature = "oldglibc"))]
 fn build_targets_dualstack() {
     let t = Targets::build(vec!["8.8.8.8", "localhost"], is_any);
     assert_eq!(
@@ -46,7 +46,7 @@ fn build_targets_ipv4() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(not(feature = "oldglibc"))]
 fn build_targets_ipv6() {
     let t = Targets::build(vec!["localhost"], IpAddr::is_ipv6);
     assert_eq!(t.unwrap().addr, vec![addr("::1")]);

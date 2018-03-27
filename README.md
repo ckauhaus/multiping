@@ -32,11 +32,8 @@ the easiest way to accomplish this.
 - Adjustable warning/critical timeouts.
 
 
-## Copyright
+## Author and License
 
-Christian Kauhaus <kc@flyingcircus.io>
-
-
-## License
-
-BSD 2-Clause
+The primary author is [Christian Kauhaus](kc@flyingcircus.io). `multiping` is
+licensed under the term of the
+[BSD 3-clause "revised" license](https://opensource.org/licenses/BSD-3-Clause).

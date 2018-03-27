@@ -1,7 +1,10 @@
 [package]
 name = "multiping"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/ckauhaus/multiping"
 description = """\
 Pings several hosts at once to test outside connectivity.
 
@@ -21,3 +24,9 @@ tokio-ping = "0.1.2"
 
 [profile.release]
 lto = true
+
+[features]
+default = []
+# older versions of glibc don't return IPv6 addresses for resolver calls unless
+# explicitely requested
+oldglibc = []
