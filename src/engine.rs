@@ -1,11 +1,11 @@
 //! Asynchronous pings.
 
+use errors::*;
 use futures::future::{join_all, ok};
 use futures::prelude::*;
-use errors::*;
-use std::net::IpAddr;
 use std::cell::RefCell;
 use std::io;
+use std::net::IpAddr;
 use std::rc::Rc;
 use tokio_core::reactor;
 use tokio_ping::{self, Pinger};
@@ -32,7 +32,7 @@ where
                     let mut best = best.borrow_mut();
                     match best[i] {
                         Some(b) if b > *elt => best[i] = Some(*elt),
-                        None                => best[i] = Some(*elt),
+                        None => best[i] = Some(*elt),
                         _ => (),
                     };
                     ok(*elt >= cutoff)

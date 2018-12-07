@@ -1,6 +1,6 @@
 [package]
 name = "multiping"
-version = "1.1.1"
+version = "1.1.2-dev"
 authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
 readme = "README.md"
 license = "BSD-3-Clause"

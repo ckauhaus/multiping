@@ -13,7 +13,7 @@ mod status;
 mod tests;
 
 mod errors {
-    error_chain!{
+    error_chain! {
         links {
             Ping(::tokio_ping::Error, ::tokio_ping::ErrorKind);
         }
@@ -25,13 +25,13 @@ mod errors {
     }
 }
 
-use error_chain::ChainedError;
-use status::Status;
 use engine::{ping_all, Times};
+use error_chain::ChainedError;
+use errors::*;
+use status::Status;
 use std::fmt::Write;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::process;
-use errors::*;
 
 /// Transparent AF filter
 fn is_any(_: &IpAddr) -> bool {
@@ -54,10 +54,12 @@ impl<'a> Targets<'a> {
     /// Resolves single host name and adds results to addr, host, warn
     fn add_host(&mut self, host: &'a str, filt: fn(&IpAddr) -> bool) {
         match (host, 0).to_socket_addrs() {
-            Ok(addrs) => for addr in addrs.map(|sa| sa.ip()).filter(filt) {
-                self.addr.push(addr);
-                self.host.push(host);
-            },
+            Ok(addrs) => {
+                for addr in addrs.map(|sa| sa.ip()).filter(filt) {
+                    self.addr.push(addr);
+                    self.host.push(host);
+                }
+            }
             Err(e) => self.warn.push(format!("{}: {}", host, e)),
         }
     }
@@ -113,7 +115,8 @@ impl<'a> PingTimes<'a> {
                 output::u(val),
                 warn,
                 crit
-            ).ok();
+            )
+            .ok();
         }
         res
     }
@@ -196,8 +199,9 @@ fn run() -> Result<i32> {
         args.values_of("TARGET")
             .expect("required arg HOSTS missing"),
         af_filter,
-    )?.ping(warn)?
-        .evaluate(warn, crit);
+    )?
+    .ping(warn)?
+    .evaluate(warn, crit);
     println!("{}: {} - {}", crate_name!(), status, output);
     Ok(status as i32)
 }

@@ -1,5 +1,5 @@
-use std::fmt;
 use self::Status::*;
+use std::fmt;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub enum Status {
